@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Incident Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: #1e3a8a;
+        }
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 250px;
+            background: #1e40af;
+            border-right: 1px solid #2563eb;
+            overflow-y: auto;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+            color: #e0e7ff;
+        }
+        .nav-item:hover {
+            background: #2563eb;
+        }
+        .nav-item.active {
+            background: #3b82f6;
+            border-left-color: #60a5fa;
+            color: #ffffff;
+        }
+        .page-content {
+            display: none;
+        }
+        .page-content.active {
+            display: block;
+        }
+        .incident-number {
+            display: inline-block;
+            background: #1e40af;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <div class="p-6 border-b border-blue-700">
+            <h1 class="text-xl font-bold text-white">AI Incident Database</h1>
+        </div>
+        <nav class="py-4">
+            <div class="nav-item active" onclick="showPage('incidents', this)">
+                <span class="text-sm font-medium">📊 Discover Incidents</span>
+            </div>
+            <div class="nav-item" onclick="showPage('analytics', this)">
+                <span class="text-sm font-medium">📈 Analytics</span>
+            </div>
+            <div class="nav-item" onclick="showPage('statistics', this)">
+                <span class="text-sm font-medium">📉 Statistics</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+        <!-- Page 1: Incidents Overview -->
+        <div id="page-incidents" class="page-content active">
+            
+        <div class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">AI Incident Reports</h2>
+            <p id="resultsCount" class="text-gray-600">0 results found</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+                <h3 id="totalIncidents" class="text-3xl font-bold text-gray-800 mb-1">0</h3>
+                <p class="text-gray-600 text-sm">Total Incidents</p>
+            </div>
+            <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+                <h3 id="criticalCount" class="text-3xl font-bold text-gray-800 mb-1">0</h3>
+                <p class="text-gray-600 text-sm">Critical Impact</p>
+            </div>
+            <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+                <h3 id="claimedCount" class="text-3xl font-bold text-gray-800 mb-1">0</h3>
+                <p class="text-gray-600 text-sm">Claimed</p>
+            </div>
+            <div class="bg-white p-5 rounded-lg shadow border border-gray-200">
+                <h3 id="unclaimedCount" class="text-3xl font-bold text-gray-800 mb-1">0</h3>
+                <p class="text-gray-600 text-sm">Unclaimed</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4" id="incidentsList"></div>
+        
+        </div>
+
+        <!-- Page 2: Statistics -->
+        <div id="page-statistics" class="page-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Incident Statistics</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Incidents by Risk Domain</h3>
+                    <div class="h-64">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Enough Information to Code</h3>
+                    <div class="h-64">
+                        <canvas id="enoughInfoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 2: Advanced Analytics -->
+        <div id="page-analytics" class="page-content">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Advanced Analytics</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+                <!-- AI Functions Chart -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">AI Functions</h3>
+                    <div class="h-64">
+                        <canvas id="aiFunctionsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- AI Technologies Chart -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">AI Technologies</h3>
+                    <div class="h-64">
+                        <canvas id="aiTechnologiesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Sector Chart -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Sectors</h3>
+                    <div class="h-64">
+                        <canvas id="riskDomainChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Responsible Party Chart -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Responsible Party</h3>
+                    <div class="h-64">
+                        <canvas id="responsiblePartyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Risk Emergence Chart -->
+                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Claims Over Time</h3>
+                    <div class="h-64">
+                        <canvas id="riskEmergenceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Claims from AI Incident Survey Responses - Claimed.csv
+        const claimSubmissions = [
+            { id: 1, claimedAt: '2026-01-17T09:45:31.041Z', userToken: '4877c6a3-07ad-4647-826e-9bd4b3a25aa0' },
+            { id: 2, claimedAt: '2026-01-17T09:49:32.656Z', userToken: 'aedee240-320d-453d-8710-fa673ca131c0' },
+            { id: 3, claimedAt: '2026-01-17T09:50:11.862Z', userToken: '8a5a3f55-4ca6-4092-87d2-6a087061df3c' },
+            { id: 4, claimedAt: '2026-01-17T09:50:53.232Z', userToken: 'bfc303c6-c488-4890-81d5-5b699f6931c8' },
+            { id: 5, claimedAt: '2026-01-17T10:05:11.042Z', userToken: '3f49e008-0f81-42f9-9d77-e78fc145a289' },
+            { id: 6, claimedAt: '2026-01-17T10:25:53.550Z', userToken: '9bc1942b-8653-4727-a489-b62d3c873b08' },
+            { id: 7, claimedAt: '2026-01-17T10:31:31.792Z', userToken: 'b83d3804-8d51-402c-926e-cc6308503cb2' },
+            { id: 8, claimedAt: '2026-01-17T11:37:50.119Z', userToken: '1fe10981-7d26-4d52-af94-f73d59550c55' },
+            { id: 9, claimedAt: '2026-01-17T23:58:31.809Z', userToken: '98245265-7d0f-4d8b-9adc-42ae2f069c1e' },
+            { id: 10, claimedAt: '2026-01-18T00:31:06.198Z', userToken: '07020d83-79bb-4444-b21e-4562046de4a2' },
+            { id: 11, claimedAt: '2026-01-18T00:31:15.975Z', userToken: '77782cf5-abf1-443e-b08e-5b671cbb9abd' },
+            { id: 12, claimedAt: '2026-01-19T20:56:13.378Z', userToken: '0cce1475-66cb-4f62-a9f6-d5a08d935658' },
+            { id: 13, claimedAt: '2026-01-20T12:48:20.666Z', userToken: 'bbb1c8b5-dea5-4d30-9497-aadcdafcb0eb' },
+            { id: 14, claimedAt: '2026-01-21T18:22:57.610Z', userToken: '880cee13-8fc6-4263-8444-9f5caa2aaaf4' }
+        ];
+
+        // Rows from AI Incident Survey Responses - Responses.csv (provided sheet)
+        const responseRows = [
+            { incidentId: 1, timestamp: '2026-01-17T09:48:29.764Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Information and communication', aiFunction: 'Chatbot / conversational AI', aiTechnologies: 'Transformer models', technicalFailure: 'Algorithmic bias', riskDomain: 'Discrimination and toxicity', responsibleParty: 'AI system', riskEmergence: 'Cannot be determined', enoughInfo: 'Partially' },
+            { incidentId: 2, timestamp: '2026-01-17T09:54:32.044Z', groupsHarmed: 'Race; Nationality / immigration status', sector: 'Information and communication', aiFunction: 'Chatbot / conversational AI; Automated content curation; Content search', aiTechnologies: 'Transformer models; Classification', technicalFailure: 'Misinformation generation hazard; Algorithmic bias', riskDomain: 'Socioeconomic or environmental harms', responsibleParty: 'Shared / unclear', riskEmergence: 'Unintentional', enoughInfo: 'Partially' },
+            { incidentId: 3, timestamp: '2026-01-17T09:55:34.142Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Education', aiFunction: 'Content recommendation', aiTechnologies: 'Other', technicalFailure: 'Other', riskDomain: 'Malicious actors and misuse', responsibleParty: 'Human (developer, operator, user)', riskEmergence: 'Intentional', enoughInfo: 'No' },
+            { incidentId: 4, timestamp: '2026-01-17T09:56:11.375Z', groupsHarmed: 'None specified', sector: 'Wholesale and retail trade', aiFunction: 'Automated content curation', aiTechnologies: 'Classification', technicalFailure: 'Lack of transparency / explainability; Context misidentification', riskDomain: 'AI system safety, failures, and limitations', responsibleParty: 'AI system', riskEmergence: 'Unintentional', enoughInfo: 'Yes' },
+            { incidentId: 5, timestamp: '2026-01-17T10:08:02.924Z', groupsHarmed: 'Disability; Age', sector: 'Information and communication', aiFunction: 'Chatbot / conversational AI', aiTechnologies: 'Cannot be determined', technicalFailure: 'Unsafe exposure or access; Harmful application; Algorithmic bias', riskDomain: 'AI system safety, failures, and limitations', responsibleParty: 'AI system', riskEmergence: 'Intentional', enoughInfo: 'Partially' },
+            { incidentId: 6, timestamp: '2026-01-17T10:29:02.068Z', groupsHarmed: 'None specified', sector: 'Information and communication', aiFunction: 'Cannot be determined', aiTechnologies: 'Cannot be determined', technicalFailure: 'Misinformation generation hazard', riskDomain: 'Misinformation', responsibleParty: 'AI system', riskEmergence: 'Cannot be determined', enoughInfo: 'No' },
+            { incidentId: 7, timestamp: '2026-01-17T10:36:47.471Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Cannot be determined', aiFunction: 'Automated assessment (e.g. skills, credit, risk)', aiTechnologies: 'Classification', technicalFailure: 'Lack of transparency / explainability; Algorithmic bias', riskDomain: 'Discrimination and toxicity', responsibleParty: 'Shared / unclear', riskEmergence: 'Unintentional', enoughInfo: 'Partially' },
+            { incidentId: 8, timestamp: '2026-01-17T11:46:05.811Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Cannot be determined', aiFunction: 'Deepfake generation', aiTechnologies: 'Cannot be determined', technicalFailure: 'Context misidentification; Misinformation generation hazard', riskDomain: 'Malicious actors and misuse', responsibleParty: 'Human (developer, operator, user)', riskEmergence: 'Intentional', enoughInfo: 'Partially' },
+            { incidentId: 10, timestamp: '2026-01-18T00:32:49.407Z', groupsHarmed: 'None specified', sector: 'Education', aiFunction: 'Chatbot / conversational AI', aiTechnologies: 'Transformer models', technicalFailure: 'Context misidentification; Misinformation generation hazard', riskDomain: 'Misinformation', responsibleParty: 'AI system', riskEmergence: 'Unintentional', enoughInfo: 'Yes' }
+        ];
+
+        const claimsMap = new Map(claimSubmissions.map(entry => [Number(entry.id), entry]));
+
+        const buildDescription = (row) => {
+            const parts = [];
+            if (row.sector) parts.push(`Sector: ${row.sector}`);
+            if (row.aiFunction) parts.push(`AI function: ${row.aiFunction}`);
+            if (row.aiTechnologies) parts.push(`Technologies: ${row.aiTechnologies}`);
+            if (row.technicalFailure) parts.push(`Failure: ${row.technicalFailure}`);
+            return parts.join(' • ') || 'No narrative provided.';
+        };
+
+        const incidents = responseRows.map(row => {
+            const claim = claimsMap.get(Number(row.incidentId));
+            return {
+                id: Number(row.incidentId),
+                country: 'Unspecified',
+                impactLevel: 'unspecified',
+                impactLabel: 'Impact not provided',
+                when: 'Unspecified',
+                description: buildDescription(row),
+                primaryCategory: row.riskDomain || 'Unspecified',
+                severity: 'low',
+                status: claim ? 'claimed' : 'unclaimed',
+                claimedAt: claim ? claim.claimedAt : null,
+                userToken: claim ? claim.userToken : null,
+                groupsHarmed: row.groupsHarmed,
+                sector: row.sector,
+                aiFunction: row.aiFunction,
+                aiTechnologies: row.aiTechnologies,
+                technicalFailure: row.technicalFailure,
+                riskDomain: row.riskDomain,
+                responsibleParty: row.responsibleParty,
+                riskEmergence: row.riskEmergence,
+                enoughInfo: row.enoughInfo,
+                timestamp: row.timestamp
+            };
+        });
+
+        const categoryColor = (riskDomain) => {
+            const normalized = (riskDomain || '').toLowerCase();
+            const map = {
+                'discrimination and toxicity': 'bg-emerald-700',
+                'socioeconomic or environmental harms': 'bg-indigo-600',
+                'malicious actors and misuse': 'bg-rose-600',
+                'ai system safety, failures, and limitations': 'bg-amber-600',
+                'misinformation': 'bg-blue-700',
+                'ai system safety': 'bg-amber-600',
+                'uncategorized': 'bg-gray-600'
+            };
+            return map[normalized] || 'bg-slate-600';
+        };
+
+        const impactStyle = (impactLevel) => {
+            const normalized = (impactLevel || '').toLowerCase();
+            if (normalized === 'extreme') return 'bg-red-100 text-red-800 border-red-200';
+            if (normalized === 'moderate') return 'bg-orange-100 text-orange-800 border-orange-200';
+            if (normalized === 'small') return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            if (normalized === 'none') return 'bg-green-100 text-green-800 border-green-200';
+            return 'bg-gray-100 text-gray-800 border-gray-200';
+        };
+
+        // Tab switching function
+        function showPage(pageName, element) {
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const pageElement = document.getElementById('page-' + pageName);
+            if (pageElement) {
+                pageElement.classList.add('active');
+            }
+
+            if (element) {
+                element.classList.add('active');
+            }
+        }
+
+        // Calculate statistics
+        function updateStats() {
+            const criticalCount = incidents.filter(i => i.severity === 'critical').length;
+            const claimedCount = incidents.filter(i => i.status === 'claimed').length;
+            const unclaimedCount = incidents.length - claimedCount;
+
+            document.getElementById('resultsCount').textContent = `${incidents.length} results found`;
+            document.getElementById('totalIncidents').textContent = incidents.length;
+            document.getElementById('criticalCount').textContent = criticalCount;
+            document.getElementById('claimedCount').textContent = claimedCount;
+            document.getElementById('unclaimedCount').textContent = unclaimedCount;
+        }
+
+        // Render incidents
+        function renderIncidents() {
+            const incidentsList = document.getElementById('incidentsList');
+
+            incidentsList.innerHTML = incidents.map(incident => {
+                const categoryBadge = `<span class="${categoryColor(incident.riskDomain)} text-white px-3 py-1 rounded text-xs font-semibold">${incident.riskDomain || 'Unspecified'}</span>`;
+
+                const statusClass = incident.status === 'claimed'
+                    ? 'bg-green-100 text-green-800 border-green-200'
+                    : 'bg-orange-100 text-orange-800 border-orange-200';
+
+                const claimedInfo = incident.claimedAt
+                    ? `<div class="text-xs text-gray-500 mt-2">Claimed on ${new Date(incident.claimedAt).toLocaleString()}</div>`
+                    : '';
+
+                const timestampLabel = incident.timestamp ? new Date(incident.timestamp).toLocaleString() : 'Unspecified time';
+
+                return `
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="p-5">
+                            <div class="flex flex-wrap items-center gap-2 mb-3">
+                                <span class="incident-number">#${incident.id}</span>
+                                ${categoryBadge}
+                                <span class="bg-slate-100 text-slate-800 border border-slate-200 px-2 py-1 rounded text-xs font-semibold">${incident.sector || 'Sector: N/A'}</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">${incident.primaryCategory || 'Risk domain'} • ${timestampLabel}</h3>
+                            <p class="text-gray-700 text-sm mb-3">${incident.description}</p>
+                            <div class="flex gap-2 text-xs text-gray-600 flex-wrap items-center">
+                                <span class="${impactStyle(incident.impactLevel)} px-2 py-1 rounded border font-semibold">${incident.impactLabel}</span>
+                                <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-semibold">${incident.aiFunction || 'AI function N/A'}</span>
+                                <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded font-semibold">${incident.aiTechnologies || 'Tech N/A'}</span>
+                                <span class="${statusClass} px-2 py-1 rounded border font-semibold uppercase tracking-wide">${incident.status}</span>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-600 leading-5">
+                                <div><span class="font-semibold text-gray-700">Groups harmed:</span> ${incident.groupsHarmed || 'Not specified'}</div>
+                                <div><span class="font-semibold text-gray-700">Technical failure:</span> ${incident.technicalFailure || 'Not specified'}</div>
+                                <div><span class="font-semibold text-gray-700">Responsible party:</span> ${incident.responsibleParty || 'Not specified'} • <span class="font-semibold text-gray-700">Risk emergence:</span> ${incident.riskEmergence || 'Not specified'}</div>
+                                <div><span class="font-semibold text-gray-700">Enough info to code:</span> ${incident.enoughInfo || 'Not specified'}</div>
+                            </div>
+                            ${claimedInfo}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Risk domain chart (pie)
+        function createChart() {
+            const categoryCounts = {};
+            incidents.forEach(incident => {
+                const domain = incident.riskDomain || 'Unspecified';
+                categoryCounts[domain] = (categoryCounts[domain] || 0) + 1;
+            });
+
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(categoryCounts),
+                    datasets: [{
+                        data: Object.values(categoryCounts),
+                        backgroundColor: [
+                            '#2563eb',
+                            '#7c3aed',
+                            '#dc2626',
+                            '#16a34a',
+                            '#ea580c',
+                            '#0ea5e9'
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 13, weight: 'bold' },
+                                color: '#374151'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total ? ((value / total) * 100).toFixed(1) : 0;
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            },
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 10
+                        }
+                    }
+                }
+            });
+        }
+
+        // Additional analytics charts
+        function createAnalyticsCharts() {
+            // Counts
+            const functionCounts = {};
+            const techCounts = {};
+            const sectorCounts = {};
+            const responsiblePartyCounts = {};
+            const riskEmergenceCounts = {};
+            const enoughInfoCounts = {};
+
+            incidents.forEach(incident => {
+                const fnKey = incident.aiFunction || 'Unspecified';
+                functionCounts[fnKey] = (functionCounts[fnKey] || 0) + 1;
+
+                const techKey = incident.aiTechnologies || 'Unspecified';
+                techCounts[techKey] = (techCounts[techKey] || 0) + 1;
+
+                const sectorKey = incident.sector || 'Unspecified';
+                sectorCounts[sectorKey] = (sectorCounts[sectorKey] || 0) + 1;
+
+                const rpKey = incident.responsibleParty || 'Unspecified';
+                responsiblePartyCounts[rpKey] = (responsiblePartyCounts[rpKey] || 0) + 1;
+
+                const reKey = incident.riskEmergence || 'Unspecified';
+                riskEmergenceCounts[reKey] = (riskEmergenceCounts[reKey] || 0) + 1;
+
+                const infoKey = incident.enoughInfo || 'Unspecified';
+                enoughInfoCounts[infoKey] = (enoughInfoCounts[infoKey] || 0) + 1;
+            });
+
+            // Enough info (statistics page)
+            new Chart(document.getElementById('enoughInfoChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(enoughInfoCounts),
+                    datasets: [{
+                        data: Object.values(enoughInfoCounts),
+                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444', '#94a3b8'],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 12, font: { size: 12, weight: 'bold' }, color: '#374151' } },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                    }
+                }
+            });
+
+            // AI functions (doughnut)
+            new Chart(document.getElementById('aiFunctionsChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(functionCounts),
+                    datasets: [{
+                        data: Object.values(functionCounts),
+                        backgroundColor: ['#2563eb', '#7c3aed', '#dc2626', '#16a34a', '#f59e0b', '#0ea5e9'],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 12, font: { size: 12, weight: 'bold' }, color: '#374151' } },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                    }
+                }
+            });
+
+            // AI technologies (polar area)
+            new Chart(document.getElementById('aiTechnologiesChart').getContext('2d'), {
+                type: 'polarArea',
+                data: {
+                    labels: Object.keys(techCounts),
+                    datasets: [{
+                        data: Object.values(techCounts),
+                        backgroundColor: ['#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#1d4ed8'],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 10, font: { size: 11, weight: 'bold' }, color: '#374151' } },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                    }
+                }
+            });
+
+            // Sectors (bar)
+            const sortedSectors = Object.entries(sectorCounts).sort((a, b) => b[1] - a[1]);
+            new Chart(document.getElementById('riskDomainChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: sortedSectors.map(item => item[0]),
+                    datasets: [{
+                        label: 'Incidents',
+                        data: sortedSectors.map(item => item[1]),
+                        backgroundColor: '#f97316',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#374151', font: { weight: 'bold' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { ticks: { color: '#374151', font: { weight: 'bold' } }, grid: { display: false } }
+                    }
+                }
+            });
+
+            // Responsible party (doughnut)
+            new Chart(document.getElementById('responsiblePartyChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(responsiblePartyCounts),
+                    datasets: [{
+                        data: Object.values(responsiblePartyCounts),
+                        backgroundColor: ['#22c55e', '#f59e0b', '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6'],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 10, font: { size: 11, weight: 'bold' }, color: '#374151' } },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                    }
+                }
+            });
+
+            // Risk emergence (bar)
+            const sortedEmergence = Object.entries(riskEmergenceCounts).sort((a, b) => b[1] - a[1]);
+            new Chart(document.getElementById('riskEmergenceChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: sortedEmergence.map(item => item[0]),
+                    datasets: [{
+                        label: 'Incidents',
+                        data: sortedEmergence.map(item => item[1]),
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { color: '#374151', font: { weight: 'bold' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { ticks: { color: '#374151', font: { weight: 'bold' } }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Initialize dashboard
+        updateStats();
+        renderIncidents();
+        createChart();
+        createAnalyticsCharts();
+    </script>
+</body>
+</html>
