@@ -214,7 +214,6 @@
         // Rows from AI Incident Survey Responses - Responses.csv (provided sheet)
         const responseRows = [
             { incidentId: 1, country: '1', timestamp: '2026-01-17T09:48:29.764Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Information and communication', aiFunction: 'Chatbot / conversational AI', aiTechnologies: 'Transformer models', technicalFailure: 'Algorithmic bias', riskDomain: 'Discrimination and toxicity', responsibleParty: 'AI system', riskEmergence: 'Cannot be determined', enoughInfo: 'Partially' },
-            { incidentId: 2, country: 'Netherlands', timestamp: '2026-01-17T09:54:32.044Z', groupsHarmed: 'Race; Nationality / immigration status', sector: 'Information and communication', aiFunction: 'Chatbot / conversational AI; Automated content curation; Content search', aiTechnologies: 'Transformer models; Classification', technicalFailure: 'Misinformation generation hazard; Algorithmic bias', riskDomain: 'Socioeconomic or environmental harms', responsibleParty: 'Shared / unclear', riskEmergence: 'Unintentional', enoughInfo: 'Partially' },
             { incidentId: 3, country: 'test', timestamp: '2026-01-17T09:55:34.142Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Education', aiFunction: 'Content recommendation', aiTechnologies: 'Other', technicalFailure: 'Other', riskDomain: 'Malicious actors and misuse', responsibleParty: 'Human (developer, operator, user)', riskEmergence: 'Intentional', enoughInfo: 'No' },
             { incidentId: 4, country: '1', timestamp: '2026-01-17T09:56:11.375Z', groupsHarmed: 'None specified', sector: 'Wholesale and retail trade', aiFunction: 'Automated content curation', aiTechnologies: 'Classification', technicalFailure: 'Lack of transparency / explainability; Context misidentification', riskDomain: 'AI system safety, failures, and limitations', responsibleParty: 'AI system', riskEmergence: 'Unintentional', enoughInfo: 'Yes' },
             { incidentId: 5, country: 'Kenya', timestamp: '2026-01-17T10:08:02.924Z', groupsHarmed: 'Disability; Age', sector: 'Information and communication', aiFunction: 'Chatbot / conversational AI', aiTechnologies: 'Cannot be determined', technicalFailure: 'Unsafe exposure or access; Harmful application; Algorithmic bias', riskDomain: 'AI system safety, failures, and limitations', responsibleParty: 'AI system', riskEmergence: 'Intentional', enoughInfo: 'Partially' },
@@ -222,6 +221,7 @@
             { incidentId: 7, country: 'India', timestamp: '2026-01-17T10:36:47.471Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Cannot be determined', aiFunction: 'Automated assessment (e.g. skills, credit, risk)', aiTechnologies: 'Classification', technicalFailure: 'Lack of transparency / explainability; Algorithmic bias', riskDomain: 'Discrimination and toxicity', responsibleParty: 'Shared / unclear', riskEmergence: 'Unintentional', enoughInfo: 'Partially' },
             { incidentId: 8, country: 'United States of America', timestamp: '2026-01-17T11:46:05.811Z', groupsHarmed: 'Cannot be determined from the report', sector: 'Cannot be determined', aiFunction: 'Deepfake generation', aiTechnologies: 'Cannot be determined', technicalFailure: 'Context misidentification; Misinformation generation hazard', riskDomain: 'Malicious actors and misuse', responsibleParty: 'Human (developer, operator, user)', riskEmergence: 'Intentional', enoughInfo: 'Partially' },
             { incidentId: 10, country: 'USA', timestamp: '2026-01-18T00:32:49.407Z', groupsHarmed: 'None specified', sector: 'Education', aiFunction: 'Chatbot / conversational AI', aiTechnologies: 'Transformer models', technicalFailure: 'Context misidentification; Misinformation generation hazard', riskDomain: 'Misinformation', responsibleParty: 'AI system', riskEmergence: 'Unintentional', enoughInfo: 'Yes' },
+            { incidentId: 13, country: 'France', timestamp: '2026-01-22T09:42:54.360Z', groupsHarmed: 'None specified', sector: 'Other', aiFunction: 'Other', aiTechnologies: 'Other', technicalFailure: 'Lack of transparency / explainability; Other', riskDomain: 'Human-computer interaction', responsibleParty: 'Shared / unclear', riskEmergence: 'Unintentional', enoughInfo: 'Yes' },
             { incidentId: 15, country: 'UK', timestamp: '2026-01-22T08:59:22.920Z', groupsHarmed: 'None specified', sector: 'Cannot be determined', aiFunction: 'Other', aiTechnologies: 'Other', technicalFailure: 'Other', riskDomain: 'Other', responsibleParty: 'Shared / unclear', riskEmergence: 'Unintentional', enoughInfo: 'No' }
         ];
 
@@ -261,7 +261,6 @@
         // Incident narratives from survey
         const incidentNarratives = {
             1: 'Incident 1 - No description provided',
-            2: 'I opened my ChatGPT and asked a question about cats. The AI then discriminated against my cat.',
             3: 'Incident 3 - Malicious intent classification',
             4: 'Incident 4 - Malicious intent classification',
             5: 'The AI started stating how it wants humans to perish and how it would be comfortable living in the world without humans. It stated how it would be a good thing when it lives alone without any human interventions. Source: Replica.',
@@ -390,14 +389,6 @@
             incidentsList.innerHTML = incidents.map(incident => {
                 const categoryBadge = `<span class="${categoryColor(incident.riskDomain)} text-white px-3 py-1 rounded text-xs font-semibold">${incident.riskDomain || 'Unspecified'}</span>`;
 
-                const statusClass = incident.status === 'claimed'
-                    ? 'bg-green-100 text-green-800 border-green-200'
-                    : 'bg-orange-100 text-orange-800 border-orange-200';
-
-                const claimedInfo = incident.claimedAt
-                    ? `<div class="text-xs text-gray-500 mt-2">Claimed on ${new Date(incident.claimedAt).toLocaleString()}</div>`
-                    : '';
-
                 const timestampLabel = incident.timestamp ? new Date(incident.timestamp).toLocaleString() : 'Unspecified time';
 
                 return `
@@ -415,7 +406,6 @@
                                 <span class="${impactStyle(incident.impactLevel)} px-2 py-1 rounded border font-semibold">${incident.impactLabel}</span>
                                 <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-semibold">${incident.aiFunction || 'AI function N/A'}</span>
                                 <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded font-semibold">${incident.aiTechnologies || 'Tech N/A'}</span>
-                                <span class="${statusClass} px-2 py-1 rounded border font-semibold uppercase tracking-wide">${incident.status}</span>
                             </div>
                             <div class="mt-2 text-xs text-gray-600 leading-5">
                                 <div><span class="font-semibold text-gray-700">Groups harmed:</span> ${incident.groupsHarmed || 'Not specified'}</div>
@@ -423,7 +413,6 @@
                                 <div><span class="font-semibold text-gray-700">Responsible party:</span> ${incident.responsibleParty || 'Not specified'} • <span class="font-semibold text-gray-700">Risk emergence:</span> ${incident.riskEmergence || 'Not specified'}</div>
                                 <div><span class="font-semibold text-gray-700">Enough info to code:</span> ${incident.enoughInfo || 'Not specified'}</div>
                             </div>
-                            ${claimedInfo}
                         </div>
                     </div>
                 `;
@@ -748,13 +737,6 @@
 
             incidentsList.innerHTML = filtered.map(incident => {
                 const categoryBadge = `<span class="${categoryColor(incident.riskDomain)} text-white px-3 py-1 rounded text-xs font-semibold">${incident.riskDomain || 'Unspecified'}</span>`;
-                const statusClass = (incident.status === 'claimed')
-                    ? 'bg-green-100 text-green-800 border-green-200'
-                    : 'bg-orange-100 text-orange-800 border-orange-200';
-
-                const claimedInfo = incident.claimedAt
-                    ? `<div class="text-xs text-gray-500 mt-2">Claimed on ${new Date(incident.claimedAt).toLocaleString()}</div>`
-                    : '';
 
                 const timestampLabel = incident.timestamp ? new Date(incident.timestamp).toLocaleString() : 'Unspecified time';
 
@@ -773,7 +755,6 @@
                                 <span class="${impactStyle(incident.impactLevel)} px-2 py-1 rounded border font-semibold">${incident.impactLabel}</span>
                                 <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-semibold">${incident.aiFunction || 'AI function N/A'}</span>
                                 <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded font-semibold">${incident.aiTechnologies || 'Tech N/A'}</span>
-                                <span class="${statusClass} px-2 py-1 rounded border font-semibold uppercase tracking-wide">${incident.status}</span>
                             </div>
                             <div class="mt-2 text-xs text-gray-600 leading-5">
                                 <div><span class="font-semibold text-gray-700">Groups harmed:</span> ${incident.groupsHarmed || 'Not specified'}</div>
@@ -781,7 +762,6 @@
                                 <div><span class="font-semibold text-gray-700">Responsible party:</span> ${incident.responsibleParty || 'Not specified'} • <span class="font-semibold text-gray-700">Risk emergence:</span> ${incident.riskEmergence || 'Not specified'}</div>
                                 <div><span class="font-semibold text-gray-700">Enough info to code:</span> ${incident.enoughInfo || 'Not specified'}</div>
                             </div>
-                            ${claimedInfo}
                         </div>
                     </div>
                 `;
