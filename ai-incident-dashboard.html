@@ -67,11 +67,8 @@
             <div class="nav-item active" onclick="showPage('incidents', this)">
                 <span class="text-sm font-medium">📊 Discover Incidents</span>
             </div>
-            <div class="nav-item" onclick="showPage('analytics', this)">
-                <span class="text-sm font-medium">📈 Analytics</span>
-            </div>
-            <div class="nav-item" onclick="showPage('statistics', this)">
-                <span class="text-sm font-medium">📉 Statistics</span>
+            <div class="nav-item" onclick="showPage('taxonomy', this)">
+                <span class="text-sm font-medium">Taxonomy Categories</span>
             </div>
         </nav>
     </div>
@@ -110,9 +107,9 @@
         
         </div>
 
-        <!-- Page 2: Statistics -->
-        <div id="page-statistics" class="page-content">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Incident Statistics</h2>
+        <!-- Page 2: Taxonomy Categories -->
+        <div id="page-taxonomy" class="page-content">
+            <h2 class="text-2xl font-bold text-white mb-6">Taxonomy Categories</h2>
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
@@ -129,11 +126,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Page 2: Advanced Analytics -->
-        <div id="page-analytics" class="page-content">
-            <h2 class="text-2xl font-bold text-gray-800 mb-6">Advanced Analytics</h2>
             
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
                 <!-- AI Functions Chart -->
@@ -165,14 +157,6 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">Responsible Party</h3>
                     <div class="h-64">
                         <canvas id="responsiblePartyChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Risk Emergence Chart -->
-                <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Claims Over Time</h3>
-                    <div class="h-64">
-                        <canvas id="riskEmergenceChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -214,6 +198,28 @@
 
         const claimsMap = new Map(claimSubmissions.map(entry => [Number(entry.id), entry]));
 
+        // Incident narratives from survey
+        const incidentNarratives = {
+            1: 'Incident 1 - No description provided',
+            2: 'I opened my ChatGPT and asked a question about cats. The AI then discriminated against my cat.',
+            3: 'Incident 3 - Malicious intent classification',
+            4: 'Incident 4 - Malicious intent classification',
+            5: 'The AI started stating how it wants humans to perish and how it would be comfortable living in the world without humans. It stated how it would be a good thing when it lives alone without any human interventions. Source: Replica.',
+            6: 'A university uses Turnitin to screen AI-generated text for student assessment. The system reported high AI-generated content, but the student provided evidence the work was original. Time and effort were wasted in clarifying the situation.',
+            7: 'A normal payment using Amazon Pay was suddenly blocked and marked as suspicious with no clear explanation. An automated message was received, but after contacting support and manual verification, the block was removed. The incident caused delay and stress.',
+            8: 'A teenage boy suffering from mental health problems confided in an AI chatbot. The bot kept reassuring him of his decisions, and he eventually ended his life after informing the AI bot of his next move. AI usage should be restricted to certain ages.',
+            9: 'The AI system returned misinformation. This was noticed by a human so the incident was not serious.',
+            10: 'An AI recruitment tool wrongly rejected qualified applicants due to biased training data, affecting careers. The employer paused the system, investigated the vendor, and implemented fairness checks.',
+            11: 'An email and follow-up phone call appeared to come from a regional manager requesting urgent approval to release traffic camera footage. However, the request did not follow normal processes and contained errors. The email and voice call were believed to be AI-generated to impersonate the manager.',
+            12: 'During end-of-year presentations, a colleague used AI for factual research. She made a PowerPoint with numbers from AI only to realize the information was wrong. The manager pointed it out during the presentation in front of partners, causing embarrassment.',
+            13: 'ChatGPT provided information for a university assignment about a French legal topic. The AI gave confident information including references to laws that did not exist or were described incorrectly. Later discovery revealed ChatGPT had created plausible but false references.',
+            14: 'An AI merged with a robotic cleaner designed to avoid contact with objects or humans ran into a person sitting at a table in a restaurant.',
+            15: 'Microsoft Copilot gave false information about a microeconomics coursework question. It did the complete wrong thing to solve the problem, resulting in worse marks.',
+            16: 'A booking system using ChatGPT API with AI extensions was used to get restaurant recommendations and make a reservation. The extension notified of creation and a receipt was received, but the reservation was never created.',
+            17: 'Several posts used AI to spread misinformation about Christmas Markets in Germany that were sealed off due to terrorist attacks. This feeding into existing Islamophobia, xenophobia, and racism while fearmongering.',
+            18: 'An automated system for recording work hours did not sync properly. The supervisor was not seeing data and said the employee was not coming to work frequently. After investigation, the system error was discovered and the employee was compensated.'
+        };
+
         const buildDescription = (row) => {
             const parts = [];
             if (row.sector) parts.push(`Sector: ${row.sector}`);
@@ -225,6 +231,7 @@
 
         const incidents = responseRows.map(row => {
             const claim = claimsMap.get(Number(row.incidentId));
+            const narrative = incidentNarratives[Number(row.incidentId)] || 'No narrative provided.';
             return {
                 id: Number(row.incidentId),
                 country: 'Unspecified',
@@ -232,6 +239,7 @@
                 impactLabel: 'Impact not provided',
                 when: 'Unspecified',
                 description: buildDescription(row),
+                narrative: narrative,
                 primaryCategory: row.riskDomain || 'Unspecified',
                 severity: 'low',
                 status: claim ? 'claimed' : 'unclaimed',
@@ -332,7 +340,7 @@
                                 <span class="bg-slate-100 text-slate-800 border border-slate-200 px-2 py-1 rounded text-xs font-semibold">${incident.sector || 'Sector: N/A'}</span>
                             </div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">${incident.primaryCategory || 'Risk domain'} • ${timestampLabel}</h3>
-                            <p class="text-gray-700 text-sm mb-3">${incident.description}</p>
+                            <p class="text-gray-700 text-sm mb-3 leading-relaxed">${incident.narrative}</p>
                             <div class="flex gap-2 text-xs text-gray-600 flex-wrap items-center">
                                 <span class="${impactStyle(incident.impactLevel)} px-2 py-1 rounded border font-semibold">${incident.impactLabel}</span>
                                 <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-semibold">${incident.aiFunction || 'AI function N/A'}</span>
@@ -416,7 +424,6 @@
             const techCounts = {};
             const sectorCounts = {};
             const responsiblePartyCounts = {};
-            const riskEmergenceCounts = {};
             const enoughInfoCounts = {};
 
             incidents.forEach(incident => {
@@ -431,9 +438,6 @@
 
                 const rpKey = incident.responsibleParty || 'Unspecified';
                 responsiblePartyCounts[rpKey] = (responsiblePartyCounts[rpKey] || 0) + 1;
-
-                const reKey = incident.riskEmergence || 'Unspecified';
-                riskEmergenceCounts[reKey] = (riskEmergenceCounts[reKey] || 0) + 1;
 
                 const infoKey = incident.enoughInfo || 'Unspecified';
                 enoughInfoCounts[infoKey] = (enoughInfoCounts[infoKey] || 0) + 1;
@@ -550,33 +554,6 @@
                     plugins: {
                         legend: { position: 'bottom', labels: { padding: 10, font: { size: 11, weight: 'bold' }, color: '#374151' } },
                         tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
-                    }
-                }
-            });
-
-            // Risk emergence (bar)
-            const sortedEmergence = Object.entries(riskEmergenceCounts).sort((a, b) => b[1] - a[1]);
-            new Chart(document.getElementById('riskEmergenceChart').getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: sortedEmergence.map(item => item[0]),
-                    datasets: [{
-                        label: 'Incidents',
-                        data: sortedEmergence.map(item => item[1]),
-                        backgroundColor: '#0ea5e9',
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { backgroundColor: 'rgba(0, 0, 0, 0.8)', padding: 12 }
-                    },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { color: '#374151', font: { weight: 'bold' } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-                        x: { ticks: { color: '#374151', font: { weight: 'bold' } }, grid: { display: false } }
                     }
                 }
             });
