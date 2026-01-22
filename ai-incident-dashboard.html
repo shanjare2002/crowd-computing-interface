@@ -93,9 +93,14 @@
         <!-- Page 1: Incidents Overview -->
         <div id="page-incidents" class="page-content active">
             
-        <div class="mb-6">
-            <h2 class="text-2xl font-bold text-white mb-2">AI Incident Reports</h2>
-            <p id="resultsCount" class="text-white">0 results found</p>
+        <div class="mb-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-2">AI Incident Reports</h2>
+                <p id="resultsCount" class="text-white">0 results found</p>
+            </div>
+            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAANAAdILY71UM05JQjlXTDRUSk9YV05INFhQTldONVhCVi4u" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-6 rounded-lg transition duration-200 shadow-lg">
+                + Register New Incident
+            </a>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -111,6 +116,10 @@
                 <h3 id="unclaimedCount" class="text-3xl font-bold text-gray-800 mb-1">0</h3>
                 <p class="text-gray-600 text-sm">Unclaimed</p>
             </div>
+        </div>
+
+        <div class="mb-6">
+            <input type="text" id="searchInput" placeholder="Search incidents by keyword, country, risk domain, AI function..." class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
 
         <div class="grid grid-cols-1 gap-4" id="incidentsList"></div>
@@ -280,12 +289,22 @@
             return parts.join(' • ') || 'No narrative provided.';
         };
 
+        const validateCountry = (country) => {
+            if (!country) return 'Unknown';
+            const trimmed = String(country).trim();
+            // Check if it's a numeric string or invalid values
+            if (trimmed === '1' || trimmed === '0' || trimmed === 'test' || trimmed === 'Test' || trimmed === '1' || /^\d+$/.test(trimmed)) {
+                return 'Unknown';
+            }
+            return trimmed || 'Unknown';
+        };
+
         const incidents = responseRows.map(row => {
             const claim = claimsMap.get(Number(row.incidentId));
             const narrative = incidentNarratives[Number(row.incidentId)] || 'No narrative provided.';
             return {
                 id: Number(row.incidentId),
-                country: row.country || 'Unspecified',
+                country: validateCountry(row.country),
                 impactLevel: 'unspecified',
                 impactLabel: 'Impact not provided',
                 when: 'Unspecified',
@@ -388,6 +407,7 @@
                                 <span class="incident-number">#${incident.id}</span>
                                 ${categoryBadge}
                                 <span class="bg-slate-100 text-slate-800 border border-slate-200 px-2 py-1 rounded text-xs font-semibold">${incident.sector || 'Sector: N/A'}</span>
+                                <span class="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-1 rounded text-xs font-semibold">📍 ${incident.country || 'Country: N/A'}</span>
                             </div>
                             <h3 class="text-lg font-semibold text-gray-800 mb-2">${incident.primaryCategory || 'Risk domain'} • ${timestampLabel}</h3>
                             <p class="text-gray-700 text-sm mb-3 leading-relaxed">${incident.narrative}</p>
@@ -702,11 +722,84 @@
             }
         };
 
+        // Filter incidents based on search
+        function filterIncidents(searchTerm) {
+            if (!searchTerm.trim()) {
+                renderIncidents();
+                return;
+            }
+
+            const filtered = incidents.filter(incident => {
+                const searchLower = searchTerm.toLowerCase();
+                return (
+                    (incident.narrative && incident.narrative.toLowerCase().includes(searchLower)) ||
+                    (incident.country && incident.country.toLowerCase().includes(searchLower)) ||
+                    (incident.riskDomain && incident.riskDomain.toLowerCase().includes(searchLower)) ||
+                    (incident.primaryCategory && incident.primaryCategory.toLowerCase().includes(searchLower)) ||
+                    (incident.aiFunction && incident.aiFunction.toLowerCase().includes(searchLower)) ||
+                    (incident.aiTechnologies && incident.aiTechnologies.toLowerCase().includes(searchLower)) ||
+                    (incident.sector && incident.sector.toLowerCase().includes(searchLower)) ||
+                    (incident.responsibleParty && incident.responsibleParty.toLowerCase().includes(searchLower)) ||
+                    incident.id.toString().includes(searchTerm)
+                );
+            });
+
+            const incidentsList = document.getElementById('incidentsList');
+
+            incidentsList.innerHTML = filtered.map(incident => {
+                const categoryBadge = `<span class="${categoryColor(incident.riskDomain)} text-white px-3 py-1 rounded text-xs font-semibold">${incident.riskDomain || 'Unspecified'}</span>`;
+                const statusClass = (incident.status === 'claimed')
+                    ? 'bg-green-100 text-green-800 border-green-200'
+                    : 'bg-orange-100 text-orange-800 border-orange-200';
+
+                const claimedInfo = incident.claimedAt
+                    ? `<div class="text-xs text-gray-500 mt-2">Claimed on ${new Date(incident.claimedAt).toLocaleString()}</div>`
+                    : '';
+
+                const timestampLabel = incident.timestamp ? new Date(incident.timestamp).toLocaleString() : 'Unspecified time';
+
+                return `
+                    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+                        <div class="p-5">
+                            <div class="flex flex-wrap items-center gap-2 mb-3">
+                                <span class="incident-number">#${incident.id}</span>
+                                ${categoryBadge}
+                                <span class="bg-slate-100 text-slate-800 border border-slate-200 px-2 py-1 rounded text-xs font-semibold">${incident.sector || 'Sector: N/A'}</span>
+                                <span class="bg-purple-100 text-purple-800 border border-purple-200 px-2 py-1 rounded text-xs font-semibold">📍 ${incident.country || 'Country: N/A'}</span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">${incident.primaryCategory || 'Risk domain'} • ${timestampLabel}</h3>
+                            <p class="text-gray-700 text-sm mb-3 leading-relaxed">${incident.narrative}</p>
+                            <div class="flex gap-2 text-xs text-gray-600 flex-wrap items-center">
+                                <span class="${impactStyle(incident.impactLevel)} px-2 py-1 rounded border font-semibold">${incident.impactLabel}</span>
+                                <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded font-semibold">${incident.aiFunction || 'AI function N/A'}</span>
+                                <span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-1 rounded font-semibold">${incident.aiTechnologies || 'Tech N/A'}</span>
+                                <span class="${statusClass} px-2 py-1 rounded border font-semibold uppercase tracking-wide">${incident.status}</span>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-600 leading-5">
+                                <div><span class="font-semibold text-gray-700">Groups harmed:</span> ${incident.groupsHarmed || 'Not specified'}</div>
+                                <div><span class="font-semibold text-gray-700">Technical failure:</span> ${incident.technicalFailure || 'Not specified'}</div>
+                                <div><span class="font-semibold text-gray-700">Responsible party:</span> ${incident.responsibleParty || 'Not specified'} • <span class="font-semibold text-gray-700">Risk emergence:</span> ${incident.riskEmergence || 'Not specified'}</div>
+                                <div><span class="font-semibold text-gray-700">Enough info to code:</span> ${incident.enoughInfo || 'Not specified'}</div>
+                            </div>
+                            ${claimedInfo}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('resultsCount').textContent = `${filtered.length} results found`;
+        }
+
         // Initialize dashboard
         updateStats();
         renderIncidents();
         createChart();
         createAnalyticsCharts();
+
+        // Add search event listener
+        document.getElementById('searchInput').addEventListener('keyup', (e) => {
+            filterIncidents(e.target.value);
+        });
     </script>
 </body>
 </html>
