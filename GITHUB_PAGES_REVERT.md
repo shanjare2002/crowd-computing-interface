@@ -102,8 +102,11 @@ git log --oneline
 # 2. Reset to that commit
 git reset --hard COMMIT_SHA
 
-# 3. Force push (this will trigger a new deployment)
-git push --force origin main
+# 3. Force push (safer option - checks if remote has changed)
+git push --force-with-lease origin main
+
+# Only use --force if you're absolutely certain and working alone:
+# git push --force origin main
 ```
 
 ### Option C: Create a Revert Commit
@@ -129,14 +132,21 @@ If you have [GitHub CLI](https://cli.github.com/) installed:
 
 ### Step 1: View Deployments
 ```bash
-# List recent deployments
+# List recent deployments (requires jq to be installed: apt-get install jq or brew install jq)
 gh api repos/USERNAME/REPOSITORY/deployments | jq '.[0:5]'
+
+# Alternative without jq:
+gh api repos/USERNAME/REPOSITORY/deployments --jq '.[0:5]'
 ```
 
 ### Step 2: View Deployment Statuses
 ```bash
-# Get deployment ID and check its status
+# Get deployment ID from the previous command output (look for "id" field)
+# Then check its status (replace DEPLOYMENT_ID with the actual ID number)
 gh api repos/USERNAME/REPOSITORY/deployments/DEPLOYMENT_ID/statuses
+
+# Example: If the deployment ID is 123456789
+gh api repos/USERNAME/REPOSITORY/deployments/123456789/statuses
 ```
 
 ### Step 3: Use Git Commands
@@ -230,7 +240,12 @@ git push origin main
 
 # Reset to specific commit (dangerous!)
 git reset --hard COMMIT_SHA
-git push --force origin main
+
+# Use --force-with-lease instead of --force (safer - checks if remote has changed)
+git push --force-with-lease origin main
+
+# Only use plain --force if you're absolutely certain and working alone
+# git push --force origin main
 
 # Create a branch from old commit
 git checkout -b revert-branch COMMIT_SHA
